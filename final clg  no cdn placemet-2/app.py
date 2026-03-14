@@ -152,15 +152,18 @@ def dashboard():
     return render_template('dashboard.html', user=user, companies=matched_companies, student_cgpa=student_cgpa)
 
 # ================= PROFILE =================
+# ================= PROFILE =================
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     # Student profile update karna
     if 'student_id' not in session:
         return redirect(url_for('login'))
+    
     student_id = session['student_id']
     conn = db.get_db_connection()
     cursor = conn.cursor(dictionary=True)
     error = None
+    
     if request.method == 'POST':
         full_name = request.form.get('full_name')
         degree = request.form.get('degree')
@@ -171,25 +174,34 @@ def profile():
         projects = request.form.get('projects')
         internship_exp = request.form.get('internship_exp')
         job_type = request.form.get('preferred_job_type')
+        
+        # FIX: Yahan Year aur Division form se nikal rahe hain
+        current_year = request.form.get('current_year')
+        division = request.form.get('division')
+        
+        # FIX: SQL Query mein current_year aur division add kiya
         cursor.execute("""
             UPDATE students SET 
             full_name=%s, degree=%s, specialization=%s, cgpa=%s,
             passing_year=%s, technical_skills=%s, projects=%s,
-            internship_exp=%s, preferred_job_type=%s
+            internship_exp=%s, preferred_job_type=%s,
+            current_year=%s, division=%s
             WHERE id=%s
         """,(full_name, degree, specialization, cgpa, passing_year,
-             technical_skills, projects, internship_exp, job_type, student_id))
+             technical_skills, projects, internship_exp, job_type, 
+             current_year, division, student_id))
+        
         conn.commit()
         session['full_name'] = full_name
         cursor.close()
         conn.close()
         return redirect(url_for('dashboard'))
+        
     cursor.execute("SELECT * FROM students WHERE id=%s",(student_id,))
     current_data = cursor.fetchone()
     cursor.close()
     conn.close()
     return render_template('profile.html', current_data=current_data, error=error)
-
 # ================= GENERATE RESUME =================
 @app.route('/generate_resume')
 def generate_resume():
